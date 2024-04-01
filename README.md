@@ -208,10 +208,6 @@ Loss就是普通的交叉熵损失，当语义分割平台利用Softmax对像素
 2、Dice Loss：Dice
 loss将语义分割的评价指标作为Loss，Dice系数是一种集合相似度度量函数，通常用于计算两个样本的相似度，取值范围在\[0,1\]。
 
-计算公式如下：
-
-$\frac{\left( 1 + \beta^{2} \right) \times tp + smooth}{\left( 1 + \beta^{2} \right) \times tp + \beta^{2} \times fn + fp + smooth}$
-,$\beta = 1$
 
 就是预测结果和真实结果的交乘上2，除上预测结果加上真实结果。其值在0-1之间。越大表示预测结果和真实结果重合度越大。所以Dice系数是越大越好。作为LOSS的话是越小越好，所以使得Dice
 loss = 1 - Dice，就可以将Loss作为语义分割的损失。
@@ -225,9 +221,6 @@ loss = 1 - Dice，就可以将Loss作为语义分割的损失。
 **性能指标**
 
 1.  f_score：同上面的Dice系数。 代码见./utils/metrics.py
-
-$\frac{\left( 1 + \beta^{2} \right) \times tp + smooth}{\left( 1 + \beta^{2} \right) \times tp + \beta^{2} \times fn + fp + smooth}$
-,$\beta = 1$
 
 2.  mIou
 
