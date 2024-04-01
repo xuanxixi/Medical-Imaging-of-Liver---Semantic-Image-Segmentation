@@ -19,11 +19,11 @@ torchvision==0.4.0
 
 1.  原图在./ganzang_Datasets/Imags，共400张
 
-![Alt text](img/image.png)
+![Alt text](image.png)
 
 2.  标签在 ./ganzang_Datasets/Labels，共400张
 
-![Alt text](img/image-1.png)
+![Alt text](image-1.png)
 
 ## 数据预处理
 
@@ -62,7 +62,7 @@ torchvision==0.4.0
 
 > Conv5: 进行3次3×3的256通道卷积，获得1个(32,32,512) 的特征层
 
-![Alt text](img/image-2.png)
+![Alt text](image-2.png)
 
 **主干特征提取部分代码如下：或见./nets/vgg.py**
 
@@ -158,7 +158,7 @@ def VGG16(pretrained, in_channels, **kwargs):
 
 -   **[预测部分]**：利用最终获得的一个加上注意力机制并且融合所有特征的特征层，对每个特征点进行分类，相当于对每一个像素点进行分类。
 
-![Alt text](img/image-8.png)
+![Alt text](image-8.png)
 
 2)  代码实现：
 
@@ -276,13 +276,13 @@ $\frac{\left( 1 + \beta^{2} \right) \times tp + smooth}{\left( 1 + \beta^{2} \ri
 >     }
 
 -   执行unet_miou.py得到
-![Alt text](img/image-4.png)
+![Alt text](image-4.png)
 
 -   执行unet_bn_miou.py得到
-![Alt text](img/image-5.png)
+![Alt text](image-5.png)
 
 -   执行attunet_miou.py.py得到
-![Alt text](img/image-6.png)
+![Alt text](image-6.png)
 
 ## 单张图片预测
 
@@ -294,4 +294,4 @@ $\frac{\left( 1 + \beta^{2} \right) \times tp + smooth}{\left( 1 + \beta^{2} \ri
 下图可以看到，Att_Unet比Unet_BN和Unet的分割效果更好。所以在Unet的基础上，加上Batch
 Normalization层和Attention_block是有效的。
 
-![Alt text](img/image-7.png)
+![Alt text](image-7.png)
