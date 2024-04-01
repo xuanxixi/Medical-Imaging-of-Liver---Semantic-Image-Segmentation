@@ -236,7 +236,7 @@ $\frac{\left( 1 + \beta^{2} \right) \times tp + smooth}{\left( 1 + \beta^{2} \ri
 ## 训练结果
 
 1.  在pycharm的terminal中输入：tensorboard \--logdir=./runs
-![Alt text](img/image-3.png)
+![Alt text](image-3.png)
 点开显示的网址，可以看到unet模型（橘黄色）、Unet_BN模型（桃红色）和Att-unet模型（蓝色）的tra_loss、val_loss、tra_f_score、val_f_score图
 
 2.  执行unet_get_miou_prediction.py、unet_bn_get_miou_prediction.py和attunet_get_miou_prediction.py会在./unet_miou_pr_dir、./unet_bn_miou_pr_dir和./attunet_miou_pr_dir文件夹下生成用3个模型分别预测好的40张验证集图片（肉眼看到是黑白的没关系，每个像素点预测的类别已经包含在内）
@@ -276,12 +276,15 @@ $\frac{\left( 1 + \beta^{2} \right) \times tp + smooth}{\left( 1 + \beta^{2} \ri
 >     }
 
 -   执行unet_miou.py得到
+-   
 ![Alt text](image-4.png)
 
 -   执行unet_bn_miou.py得到
+-   
 ![Alt text](image-5.png)
 
 -   执行attunet_miou.py.py得到
+-   
 ![Alt text](image-6.png)
 
 ## 单张图片预测
