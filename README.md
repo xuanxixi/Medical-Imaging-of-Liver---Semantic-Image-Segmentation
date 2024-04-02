@@ -1,71 +1,69 @@
-## 语义分割-识别肝脏医学图像
+## Semantic Segmentation - Liver Medical Images
 
-## 目录
+## Directory
 
-1.  [所需环境](#所需环境)
-2.  [数据集](#性能情况)
-3.  数据预处理
-4.  网络结构Unet和Att-Unet
-5.  [训练步骤](#预测步骤)
-6.  [训练结果](#训练步骤)
-7.  单张图片预测
+1.  Required Environment
+2.  Dataset
+3.  Data Preprocessing
+4.  Network Architectures: Unet and Att-Unet
+5.  Training Steps
+6.  Training Results
+7.  Predicting on a Single Image
 
-## 所需环境
+## Required Environment
 
 torch==1.2.0\
 torchvision==0.4.0
 
-## 数据集
+## Dataset
 
-1.  原图在./ganzang_Datasets/Imags，共400张
+1.  Original images are located in "./ganzang_Datasets/Images", totaling 400 images.
 
 ![Alt text](image.png)
 
-2.  标签在 ./ganzang_Datasets/Labels，共400张
+2.  Labels are located in "./ganzang_Datasets/Labels", totaling 400 images.
 
 ![Alt text](image-1.png)
 
-## 数据预处理
+## Data Preprocessing
 
-1.  在训练前运行png2txt.py按照train:val=9:1划分数据集(train360张，val40张)
+1.  Before training, run "png2txt.py" to split the dataset into train and validation sets with a ratio of 9:1 (360 images for training and 40 images for validation).
+It will generate "trainval.txt", "train.txt", and "val.txt" under "./ganzang_Datasets/ImageSets/Segmentation", containing the filenames of the original image files.
 
-> 会在./ganzang_Datasets/ImageSets/Segmentation下生成trainval.txt、train.txt、val.txt，里面存放的是原图图片文件名称。
+2.  ./until/dataloader_medical.py" preprocesses the dataset.
 
-2.  ./until/dataloader_medical.py对数据集进行预处理。
+## Network architectures: Unet and Att-Unet
 
-## 网络结构Unet和Att-Unet
+1.  Running Unet-summary.py, Unet_BN-summary.py, and Att-Unet-summary.py separately will generate summaries of Unet, Unet_BN, and Att-Unet, respectively.
+2.  The network architecture and parameters of Att-Unet can be found by opening "AttU-net.txt". Similarly, you can view the network structure and parameters of Unet and Unet_BN by opening "Unet.txt" and "U_Net_bn.txt", respectively.
 
-> 分别运行Unet-summary.py、Unet_BN-summary.py和Att-Unet-summary.py可以得到Unet、Unet_BN
-> 和Att-Unet的网络结构和参数。或者直接打开Unet.txt、U_Net_bn.txt和AttU-net.txt查看网络结构和参数。
+## Unet
 
-1.  Unet
+1)  **Principle**：Unet can be divided into three parts:
 
-1)  **原理**：Unet可以分为三个部分：
+-   **[Main Feature Extraction]**：The main feature extraction part of Unet is similar to VGG16, consisting of stacks of conv2d and MaxPool2d layers. By using the main feature extraction part, five initial effective feature layers can be obtained. In the next step, these five effective feature layers are utilized for feature fusion.
 
--   **[主干特征提取部分]**：Unet的主干特征提取部分与VGG16类似，为conv2d和MaxPool2d的堆叠。利用主干特征提取部分，可以获得5个初步有效的特征层。在下一步，利用这5个有效特征层进行特征融合。
+-   **[Enhanced Feature Extraction]**：Utilizing the five initial effective feature layers obtained in the previous step for upsampling and feature fusion, ultimately obtaining a feature layer that integrates all features.
 
--   **[加强特征提取部分]**：利用上一步获得的5个初步有效特征层进行上采样，并且进行特征融合，最终得到一个融合所有特征的特征层。
+-   **[Prediction]**：Using the final feature layer that integrates all features, each feature point is classified, equivalent to classifying each pixel.
 
--   **[预测部分]**：利用最终获得的一个融合所有特征的特征层，对每个特征点进行分类，相当于对每一个像素点进行分类。
+2)  **Specific code implementation process:**
 
-2)  代码实现：
+-   **[Main Feature Extraction]**：Using stacks of conv2d and MaxPool2d layers from VGG16, when the input image size is (512,512,3), the specific implementation is as follows:
 
--   **[主干特征提取部分]**：使用VGG16的conv2d和MaxPool2d进行堆叠，当输入的图像大小为(512,512,3)时，具体实现如下：
+     1. Conv1: Perform two 3×3 convolutions with 64 channels, obtaining an initial effective feature layer of (512,512,64), followed by a 2×2 max pooling, resulting in a feature layer of (256,256,64).
 
-> Conv1:进行2次3×3的64通道卷积，获得1个(512,512,64)的初步有效特征层，再进行2×2最大池化，获得1个(256,256,64)的特征层
+     2. Conv2: Perform two 3×3 convolutions with 128 channels, obtaining an initial effective feature layer of (256,256,128), followed by a 2×2 max pooling, resulting in a feature layer of (128,128,128).
 
-> Conv2:进行2次3×3的128通道卷积，获得1个(256,256,128)的初步有效特征层，再进行2×2最大池化，获得1个(128,128,128)的特征层
+     3. Conv3: Perform three 3×3 convolutions with 256 channels, obtaining an initial effective feature layer of (128,128,256), followed by a 2×2 max pooling, resulting in a feature layer of (64,64,256).
 
-> Conv3:进行3次3×3的256通道卷积，获得1个(128,128,256)的初步有效特征层，再进行2×2最大池化，获得1个(64,64,256)的特征层
+     4. Conv4: Perform three 3×3 convolutions with 512 channels, obtaining an initial effective feature layer of (64,64,512), followed by a 2×2 max pooling, resulting in a feature layer of (32,32,512).
 
-> Conv4:进行3次3×3的512通道卷积，获得1个(64,64,512)的初步有效特征层，再进行2×2最大池化，获得1个(32,32,512)的特征层
-
-> Conv5: 进行3次3×3的256通道卷积，获得1个(32,32,512) 的特征层
+     5. Conv5: Perform three 3×3 convolutions with 256 channels, obtaining a feature layer of (32,32,512).
 
 ![Alt text](image-2.png)
 
-**主干特征提取部分代码如下：或见./nets/vgg.py**
-
+**Main Feature Extraction** The code is as follows, or refer to "./nets/vgg.py".
 ```
 import torch
 import torch.nn as nn
@@ -140,105 +138,103 @@ def VGG16(pretrained, in_channels, **kwargs):
 
 ```
 
-**[加强特征提取部分]：**利用上一步得到的5个初步的有效特征层进行特征融合，特征融合的方式是对特征层进行上采样，并进行堆叠。获得一个(512,512,64)的融合了所有特征的特征层
-
--   **[预测部分]**：利用一个1×1卷积进行通道调整，将最终特征层的通道数调整成num_classes=2（肝脏、背景）。
-
-**加强特征提取部分和预测部分的代码见./nets/unet.py**
-
-1.  Att-Unet
-
-
-1)  **原理**：Att-Unet可以分为三个部分：
-
--   **[主干特征提取部分]**：Att-Unet的主干提取部分与Unet的主干特征提取部分类似，为conv2d和MaxPool2d的堆叠，并且在conv2d和RELU之间加了Batch
-    normalization。利用主干特征提取部分，可以获得5个初步有效的特征层。在下一步，利用这5个有效特征层进行特征融合。
-
--   **[加强特征提取部分]**：利用上一步获得的5个初步有效特征层进行上采样，然后将上采样结果与下一个未进行上采样的有效特征层执行Att模块，得到注意力权重赋给低层特征层中，最终得到一个加上注意力机制并且融合所有特征的特征层。
-
--   **[预测部分]**：利用最终获得的一个加上注意力机制并且融合所有特征的特征层，对每个特征点进行分类，相当于对每一个像素点进行分类。
+**Enhanced Feature Extraction：** Using the five initial effective feature layers obtained in the previous step for feature fusion. The fusion method involves upsampling the feature layers and stacking them. Obtain a feature layer of (512,512,64) that integrates all features.
 
 ![Alt text](image-8.png)
 
-2)  代码实现：
+**Prediction**：Utilize a 1×1 convolution for channel adjustment, adjusting the number of channels of the final feature layer to num_classes=2 (liver, background).
 
-> 输入(1×3×255×255)，1是batchsize,3是channel。经过5次下采样（执行到class
-> AttU_Net 的self.Conv5）时，已经是最小的feature
-> map(1×1024×32×32)，对其进行上采样up_conv得到self.Up5(1×512×64×64)，然后对self.Up5(1×512×64×64)和self.Conv4(1×512×64×64)执行Attention_block
->
-> Attention_block具体执行步骤：
+**Enhanced Feature Extraction and Prediction** The code can be found in "./nets/unet.py".
 
-1.  对self.Up5(1×512×64×64)做1×1卷积得到(1×256×64×64)
-
-2.  对 self.Conv4(1×512×64×64)做1×1卷积得到(1×256×64×64)
-
-3.  将①结果和②结果相加
-
-4.  对③结果做relu
-
-5.  对④结果做conv(256×1)卷积，将256通道变为1通道，得到(1×1×64×64)
-
-6.  对⑤结果做sigmod，使得结果落在(0,1)之间，值越大，注意力权重越大。
-
-7.  将⑥得到的注意力权重和self.Conv4相乘，把注意力权重赋给低层特征层。
-
-> **Att-Unet代码见./nets/attention_unet.py**
+## Att-Unet
 
 
-3、Unet_BN
+1)  **Principle**：Att-Unet can be divided into three parts:
 
-网络结构与Att-Unet的区别就是上采样部分去掉注意力机制Attention_block
+-   **[Main Feature Extraction]**：The main feature extraction part of Att-Unet is similar to that of Unet, consisting of stacks of conv2d and MaxPool2d layers, with Batch Normalization added between conv2d and ReLU layers. By utilizing the main feature extraction part, five initial effective feature layers can be obtained. In the next step, these five effective feature layers are used for feature fusion.
 
-**Unet_BN代码见./nets/Unet_BN.py**
+-   **[Enhanced Feature Extraction]**：Using the five initial effective feature layers obtained in the previous step for upsampling, then applying the Attention (Att) module between the upsampled feature and the next feature layer not subjected to upsampling. This process generates attention weights assigned to lower-level feature layers, ultimately obtaining a feature layer with attention mechanism applied and integrating all features.
 
-
-## 训练步骤
-
--   执行unet_train_medical.py开始训练U-net模型，每训练1个epoch就会在./logs/U-net保存模型文件。
-
--   执行unet_bn_train_medical.py，开始训练Unet_BN模型，每训练1个epoch就会在./logs/U-net_bn保存模型文件。
-
--   执行Att_train_medical.py，开始训练Att-Unet模型，每训练1个epoch就会在./logs/AttU-net保存模型文件。
-
-**LOSS函数**
-
-1、Cross Entropy Loss：Cross Entropy
-Loss就是普通的交叉熵损失，当语义分割平台利用Softmax对像素点进行分类的时候，进行使用。
-
-2、Dice Loss：Dice
-loss将语义分割的评价指标作为Loss，Dice系数是一种集合相似度度量函数，通常用于计算两个样本的相似度，取值范围在\[0,1\]。
+-   **[Prediction]**：Using the final feature layer with attention mechanism applied and integrating all features, each feature point is classified, equivalent to classifying each pixel.
 
 
-就是预测结果和真实结果的交乘上2，除上预测结果加上真实结果。其值在0-1之间。越大表示预测结果和真实结果重合度越大。所以Dice系数是越大越好。作为LOSS的话是越小越好，所以使得Dice
-loss = 1 - Dice，就可以将Loss作为语义分割的损失。
+2)  **Specific code implementation process:** The input shape is (1×3×255×255), where 1 is the batch size and 3 is the number of channels. After 5 downsampling operations (up to class AttU_Net's self.Conv5), the feature map has reached its minimum size (1×1024×32×32). Next, the feature map undergoes upsampling using up_conv to obtain self.Up5 (1×512×64×64). Then, the Attention_block is applied to self.Up5 (1×512×64×64) and self.Conv4 (1×512×64×64)., the Attention_block specific implementation is as follows:
 
-**训练参数及策略**
 
-1.  初始学习率：1×10^-4^，优化器Adam，每过1个epoch调整一次学习率，更新学习率的乘法因子为0.92。
+     1. Perform a 1x1 convolution on self.Up5 (1×512×64×64) to obtain (1×256×64×64).
+   
+     2. Perform a 1x1 convolution on self.Conv4 (1×512×64×64) to obtain (1×256×64×64).
+   
+     3. Add the results of steps 1 and 2.
+   
+     4. Apply ReLU activation to the result of step 3.
+   
+     5. Perform a convolution (1x1) on the result of step 4, reducing the number of channels from 256 to 1, obtaining (1×1×64×64).
+   
+     6. Apply sigmoid activation to ensure the values fall within the range (0,1), where higher values indicate higher attention weights.
+   
+     7. Multiply the attention weights obtained in step 6 with self.Conv4, assigning the attention weights to lower-level feature layers.
 
-2.  Batch_size设置为2，Epoch设置为50轮。
 
-**性能指标**
+The code for **Att-Unet** can be found in "./nets/attention_unet.py".
 
-1.  f_score：同上面的Dice系数。 代码见./utils/metrics.py
+
+## Unet_BN
+
+The difference between the network structure and Att-Unet is that the upsampling part in Att-Unet does not include the attention mechanism (Attention_block).
+
+The code for **Unet_BN** can be found in "./nets/Unet_BN.py".
+
+
+## Training Steps
+
+-   Execute unet_train_medical.py to start training the U-net model. After each epoch, the model files will be saved in ./logs/U-net.
+
+-   Execute unet_bn_train_medical.py to start training the Unet_BN model. After each epoch, the model files will be saved in ./logs/U-net_bn.
+
+-   Execute Att_train_medical.py to start training the Att-Unet model. After each epoch, the model files will be saved in ./logs/AttU-net.
+
+## Loss Function
+
+1、Cross Entropy Loss is a standard loss function used in classification tasks. When applied in semantic segmentation platforms, it is used in conjunction with Softmax to classify pixels.
+
+2、Dice Loss utilizes the evaluation metric of semantic segmentation as the loss function. The Dice coefficient is a similarity metric commonly used to measure the similarity between two samples, typically employed for calculating the similarity between two segmented regions. Its values range between [0,1].Dice coefficient is computed as the intersection of the predicted and ground truth segmentation masks multiplied by 2, divided by the sum of the predicted and ground truth segmentation masks. Its value ranges from 0 to 1, where a higher value indicates a greater overlap between the predicted and ground truth masks.Since in loss functions, lower values are preferred, Dice Loss is typically defined as 1 minus the Dice coefficient, so that the loss is minimized. Therefore, Dice Loss = 1 - Dice is commonly used as the loss function for semantic segmentation tasks.
+
+## Training Parameters and Strategies
+
+Initial learning rate: 1e-4
+
+Optimizer: Adam
+
+Learning rate adjustment every epoch with a multiplication factor of 0.92
+
+Batch size: 2
+
+Number of epochs: 50
+
+## Performance metrics
+
+1.  f_score：The code for calculating f_score can be found in ./utils/metrics.py.
 
 2.  mIou
 
 3.  mPA
 
-## 训练结果
+## Training results
 
-1.  在pycharm的terminal中输入：tensorboard \--logdir=./runs
+1.  'tensorboard --logdir=./runs'
+
 ![Alt text](image-3.png)
-点开显示的网址，可以看到unet模型（橘黄色）、Unet_BN模型（桃红色）和Att-unet模型（蓝色）的tra_loss、val_loss、tra_f_score、val_f_score图
 
-2.  执行unet_get_miou_prediction.py、unet_bn_get_miou_prediction.py和attunet_get_miou_prediction.py会在./unet_miou_pr_dir、./unet_bn_miou_pr_dir和./attunet_miou_pr_dir文件夹下生成用3个模型分别预测好的40张验证集图片（肉眼看到是黑白的没关系，每个像素点预测的类别已经包含在内）
+You can view the training and validation loss as well as the training and validation f_score graphs for the Unet model (orange), Unet_BN model (pink), and Att-Unet model (blue).
 
-3.  再执行unet_miou.py、unet_bn_miou.py、attunet_miou.py计算用3个模型分别预测好的40张验证集图片中背景和肝脏的mIou值和mPA值。
+2.  Executing unet_get_miou_prediction.py, unet_bn_get_miou_prediction.py, and attunet_get_miou_prediction.py will generate 40 pre-segmented validation images (it's okay if they appear as black and white to the naked eye; the predicted class for each pixel is already included) for each model in the directories ./unet_miou_pr_dir, ./unet_bn_miou_pr_dir, and ./attunet_miou_pr_dir, respectively.
 
-> 计算前需要加载训练好的模型
+3.  After executing unet_miou.py, unet_bn_miou.py, and attunet_miou.py, the mean Intersection over Union (mIoU) and mean Pixel Accuracy (mPA) values for the background and liver in the 40 pre-segmented validation images predicted by each of the three models will be computed.
 
--   Unet模型在unet.py更改model_path
+4.  Before calculating, it's necessary to load the trained models.
+
+-   Modify the `model_path` variable in `unet.py` to load the Unet model.
 
 >     _defaults = {
 >         "model_path"        : './logs/U-net/Epoch50-Total_Loss0.0883.pth',
@@ -248,7 +244,7 @@ loss = 1 - Dice，就可以将Loss作为语义分割的损失。
 >         "blend"             : True
 >     }
 
--   Unet_BN模型在unet_bn.py更改model_path
+-   Update the `model_path` variable in `unet_bn.py` to load the Unet_BN model.
 
 >     _defaults = {
 >         "model_path"        : './logs/U-net_bn/Epoch50-Total_Loss0.0206.pth',
@@ -258,7 +254,7 @@ loss = 1 - Dice，就可以将Loss作为语义分割的损失。
 >         "blend"             : True
 >     }
 
--   Att_Unet模型在Attunet.py更改model_path
+-   Modify the `model_path` variable in `Attunet.py` to load the Att_Unet model.
 
 >     _defaults = {
 >         "model_path"        : './logs/AttU_Net/Epoch50-Total_Loss0.0187.pth',
@@ -268,26 +264,25 @@ loss = 1 - Dice，就可以将Loss作为语义分割的损失。
 >         "blend"             : True
 >     }
 
--   执行unet_miou.py得到
+-   Run unet_miou.py to obtain the results.
 -   
 ![Alt text](image-4.png)
 
--   执行unet_bn_miou.py得到
+-   Run unet_bn_miou.py to obtain the results.
 -   
 ![Alt text](image-5.png)
 
--   执行attunet_miou.py.py得到
+-   Run attunet_miou.py to obtain the results.
 -   
 ![Alt text](image-6.png)
 
-## 单张图片预测
+## Predicting on a Single Image
 
-1.  预测前同样需要加载训练好的模型，同上
-2.  执行unet_predict.py得到./results/unet000.png
-3.  执行unet_bn_predict.py得到./results/unet_bn000.png
-4.  执行attunet_predict.py得到./results/attunet000.png
+1.  Before prediction, it is necessary to load the trained model, as mentioned above.
+2.  Execute unet_predict.py to obtain the result ./results/unet000.png.
+3.  Execute unet_bn_predict.py to obtain the result ./results/unet_bn000.png.
+4.  Execute attunet_predict.py to obtain the result ./results/attunet000.png.
 
-下图可以看到，Att_Unet比Unet_BN和Unet的分割效果更好。所以在Unet的基础上，加上Batch
-Normalization层和Attention_block是有效的。
+From the images below, it can be observed that Att_Unet performs better in segmentation compared to Unet_BN and Unet. Therefore, adding Batch Normalization layers and Attention_block on top of Unet is effective.
 
 ![Alt text](image-7.png)
